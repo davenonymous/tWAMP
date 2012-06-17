@@ -3,6 +3,8 @@
 #endif
 #define _wamp_included_
 
+#include <websocket>
+
 #define WAMP_PROTOCOL_VERSION	1
 
 #define MAX_JSON_SIZE				4096
@@ -37,7 +39,11 @@ stock bool:Stringify_Wamp_TypeId(Wamp_TypeId:in, String:out[], maxlength) {
 	return true;
 }
 
-functag MethodInvocationCallback public(Handle:hJsonParams, &Handle:hResponse);
+funcenum MethodInvocationCallback {
+	public(Handle:hJsonParams, &Handle:hResponse),
+	public(Handle:hJsonParams, &Handle:hResponse, WebsocketHandle:iCallingWebsocket)
+};
+
 functag OnPublishCallback public(Handle:hData, bool:bSelf);
 
 native wamp_register_rpc(const String:sMethod[], MethodInvocationCallback:cbMI);
@@ -47,3 +53,6 @@ native wamp_register_channel(const String:sChannel[], OnPublishCallback:cbOnPubl
 native wamp_unregister_channel(const String:sChannel[]);
 native wamp_publish(const String:sChannel[], Handle:hJSON);
 native wamp_subscriptions(const String:sChannel[]);
+
+native wamp_set_permissions(WebsocketHandle:hWebsocket, iFlags);
+native wamp_get_permissions(WebsocketHandle:hWebsocket);
