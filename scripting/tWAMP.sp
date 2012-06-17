@@ -254,6 +254,7 @@ public OnWebsocketReceive(WebsocketHandle:websocket, WebsocketSendType:iType, co
 					Call_StartFunction(hMethodPlugin, cbMI);
 					Call_PushCell(hParams);
 					Call_PushCellRef(hResult);
+					Call_PushCell(websocket);
 
 					new iResult;
 					Call_Finish(_:iResult);
