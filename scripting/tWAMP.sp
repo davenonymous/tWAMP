@@ -40,12 +40,25 @@ public OnPluginStart() {
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max) {
 	RegPluginLibrary("wamp");
 
+	// (Un)register RPC methods
 	CreateNative("wamp_register_rpc", Native_Register);
 	CreateNative("wamp_unregister_rpc", Native_Unregister);
+
+	// (Un)register Pub/Sub channels
 	CreateNative("wamp_register_channel", Native_Register_Channel);
 	CreateNative("wamp_unregister_channel", Native_Unregister_Channel);
-	CreateNative("wamp_publish", Native_Publish);
+
+	// Get the amount of subscribers to a channel
 	CreateNative("wamp_subscriptions", Native_ChannelSubscriptions);
+
+	// Publish a message in a channel
+	CreateNative("wamp_publish", Native_Publish);
+
+	// For authentication type plugins
+	CreateNative("wamp_set_permissions", Native_SetPermissions);
+
+	// For plugins requiring authentication
+	CreateNative("wamp_get_permissions", Native_GetPermissions);
 
 
 	return APLRes_Success;
@@ -660,6 +673,20 @@ public Native_Publish(Handle:hPlugin, iNumParams) {
 	return true;
 }
 
+// native wamp_set_permissions(WebsocketHandle:hWebsocket, iFlags);
+public Native_SetPermissions(Handle:hPlugin, iNumParams) {
+	new WebsocketHandle:websocket = GetNativeCell(1);
+	new iFlags = GetNativeCell(2);
+
+	return WStore_SetPermissions(websocket, iFlags);
+}
+
+// native wamp_get_permissions(WebsocketHandle:hWebsocket);
+public Native_GetPermissions(Handle:hPlugin, iNumParams) {
+	new WebsocketHandle:websocket = GetNativeCell(1);
+
+	return WStore_GetPermissions(websocket);
+}
 
 
 /* Websocket Store stuff */
@@ -810,6 +837,34 @@ WStore_GetSessionId(WebsocketHandle:websocket, String:sSessionId[], maxlength) {
 }
 
 
+bool:WStore_SetPermissions(WebsocketHandle:websocket, flags) {
+	new String:sIndex[10];
+	IntToString(_:websocket, sIndex, sizeof(sIndex));
+
+	new Handle:hWebSocketData = INVALID_HANDLE;
+	GetTrieValue(g_WStore, sIndex, hWebSocketData);
+
+	if(hWebSocketData == INVALID_HANDLE)return false;
+
+	return SetTrieValue(hWebSocketData, "Flags", flags);
+}
+
+WStore_GetPermissions(WebsocketHandle:websocket) {
+	new String:sIndex[10];
+	IntToString(_:websocket, sIndex, sizeof(sIndex));
+
+	new Handle:hWebSocketData = INVALID_HANDLE;
+	GetTrieValue(g_WStore, sIndex, hWebSocketData);
+
+	if(hWebSocketData == INVALID_HANDLE)return -1;
+
+	new iFlags;
+	if(!GetTrieValue(hWebSocketData, "Flags", iFlags)) {
+		return -1;
+	}
+
+	return iFlags;
+}
 
 
 
