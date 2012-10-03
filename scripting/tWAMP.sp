@@ -87,26 +87,27 @@ public OnAllPluginsLoaded() {
 
 
 public OnPluginEnd() {
-	if(g_hListenSocket != INVALID_WEBSOCKET_HANDLE)
+	if(g_hListenSocket != INVALID_WEBSOCKET_HANDLE) {
 		Websocket_Close(g_hListenSocket);
+	}
 }
 
-public Action:OnWebsocketIncoming(WebsocketHandle:websocket, WebsocketHandle:newWebsocket, const String:remoteIP[], remotePort) {
+public Action:OnWebsocketIncoming(WebsocketHandle:websocket, WebsocketHandle:newWebsocket, const String:remoteIP[], remotePort, String:protocols[256]) {
 	if(!g_bEnabled)return Plugin_Handled;
-	LogMessage("Incoming websocket from %s:%i", remoteIP, remotePort);
+	//LogMessage("Incoming websocket from %s:%i  (%s)", remoteIP, remotePort, protocols);
 
+	strcopy(protocols, 255, "wamp");
 	Websocket_HookChild(newWebsocket, OnWebsocketReceive, OnWebsocketDisconnect, OnChildWebsocketError);
+	Websocket_HookReadyStateChange(newWebsocket, OnWebsocketReady);
 
 	// Create WebsocketData store
 	WStore_Create(newWebsocket);
 
-	CreateTimer(0.1, Timer_WaitForReady, newWebsocket, TIMER_REPEAT);
-
 	return Plugin_Continue;
 }
 
-public Action:Timer_WaitForReady(Handle:hTimer, any:websocket) {
-	if(Websocket_GetReadyState(websocket) == State_Open) {
+public OnWebsocketReady(WebsocketHandle:websocket, WebsocketReadyState:readystate) {
+	if(readystate == State_Open) {
 		new String:sSessionId[16];
 		String_GetRandom(sSessionId, sizeof(sSessionId), 16);
 
@@ -116,11 +117,7 @@ public Action:Timer_WaitForReady(Handle:hTimer, any:websocket) {
 		new Handle:hJSON = CreateWampWelcome(sSessionId);
 		Websocket_SendJSON(websocket, hJSON);
 		CloseHandle(hJSON);
-
-		return Plugin_Stop;
 	}
-
-	return Plugin_Continue;
 }
 
 Websocket_SendJSON(WebsocketHandle:websocket, Handle:hJSON, iStringSize=4096) {
@@ -128,7 +125,7 @@ Websocket_SendJSON(WebsocketHandle:websocket, Handle:hJSON, iStringSize=4096) {
 	json_dump(hJSON, sJSON, iStringSize, 0);
 
 	Websocket_Send(websocket, SendType_Text, sJSON);
-	PrintToServer("Message sent:\n%s", sJSON);
+	//PrintToServer("Message sent:\n%s", sJSON);
 }
 
 public OnWebsocketMasterError(WebsocketHandle:websocket, const errorType, const errorNum) {
@@ -221,7 +218,7 @@ public OnWebsocketReceive(WebsocketHandle:websocket, WebsocketSendType:iType, co
 						strcopy(sMethod, sizeof(sMethod), sProcURI);
 					}
 
-					LogMessage("RPC call to method '%s'", sMethod);
+					//LogMessage("RPC call to method '%s'", sMethod);
 
 					new Handle:hMethodOptions = INVALID_HANDLE;
 					if(!GetTrieValue(g_hMethods, sMethod, hMethodOptions)) {
@@ -786,7 +783,7 @@ WStore_AddPrefix(WebsocketHandle:websocket, const String:sPrefix[], const String
 
 	if(hPrefixes != INVALID_HANDLE) {
 		SetTrieString(hPrefixes, sPrefix, sURI);
-		LogMessage("New prefix: %s --> %s", sPrefix, sURI);
+		//LogMessage("New prefix: %s --> %s", sPrefix, sURI);
 	}
 }
 
