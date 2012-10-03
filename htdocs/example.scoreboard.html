@@ -65,7 +65,7 @@ function connect() {
 
     // WAMP session options
     {
-      skipSubprotocolCheck: true
+      skipSubprotocolCheck: false
     }
   );
 };
@@ -81,8 +81,9 @@ function UpdateScoreboard() {
         $('<td></td>').attr({ class: 'team_' + team }).text(name).appendTo(row);
 
         $.each(values, function(index, value) {
-        $('<td></td>').text(value).appendTo(row);
-      });
+          $('<td></td>').text(value).appendTo(row);
+        }
+      );
 
       row.appendTo($("#playerlist"));
     });
